@@ -1,1 +1,1 @@
-console.log('hello')
+import {Person} from './person'
