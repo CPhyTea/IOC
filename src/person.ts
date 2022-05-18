@@ -1,14 +1,24 @@
-import { injectable, injectValue } from './decorator';
+import {Inject, Injectable, InjectValue} from './decorator';
+import {Cat} from "./dog";
 
-@injectable()
-export class Person {
-    @injectValue('3w')
+export interface Person {
     name: string;
-    @injectValue('1h')
     age: number;
+    cat: Cat;
+}
 
-    constructor(name: string, age: number) {
+@Injectable()
+export class Student implements Person {
+    @InjectValue('${student.name}')
+    name: string;
+    @InjectValue('${student.age}')
+    age: number;
+    @Inject('Cat')
+    cat: Cat;
+
+    constructor(name: string, age: number, cat: Cat) {
         this.name = name;
         this.age = age;
+        this.cat = cat;
     }
 }

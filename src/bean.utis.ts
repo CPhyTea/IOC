@@ -1,41 +1,34 @@
 import 'reflect-metadata';
-
-type beanTypes = Record<string, Function>
-
-const beans: beanTypes = {}
-
-export function saveBean(target: Function) {
-    // @ts-ignore
-    const name = target.name;
-    beans[name] = target;
-}
-
 // 获取属性注入的值
-export function getMetaValue(target: Object, propertyKey: string) {
-    return Reflect.getMetadata('injectValue', target, propertyKey);
+export function getInject(target: Object, propertyKey: string) {
+    return Reflect.getMetadata('inject', target, propertyKey);
 }
 
-// 创建bean
-export function createBean(name: string) {
-    const Bean = beans[name];
-    if(!Bean) {
-        throw new Error('没有对应的类，无法创建实例');
+/**
+ * 解析注入的inject value
+ * @param target
+ * @param propertyKey
+ * @param config
+ */
+export function parseInjectValue(target: Object, propertyKey: string, config: unknown) {
+    const injectValue = Reflect.getMetadata('injectValue', target, propertyKey);
+    const pattern = /\$\{(.*)\}/;
+
+    let result: any;
+
+    if (pattern.test(injectValue)) {
+        const propPath = RegExp.$1;
+        const jsonConfig = config;
+        const pathArr = propPath.split('.');
+        result = jsonConfig;
+        pathArr.forEach(path => {
+            if (result === null || result === undefined) {
+                throw new Error('检查传入配置的prop是否正确')
+            }
+            result = result[path]
+        })
+    } else {
+        result = injectValue
     }
-    // 判断是否可以注入
-    const injectable: boolean = Reflect.getMetadata('injectable', Bean);
-    if (!injectable) {
-        return Bean;
-    }
-    // 利用反射创建实例
-    const result = Reflect.construct(Bean,[]);
-    Object.keys(result).forEach(key => {
-        // 获取装饰器injectValue的值
-        const injectValue = getMetaValue(result, key);
-        if (injectValue !== undefined || injectValue !== null) {
-            Reflect.defineProperty(result, key, injectValue);
-        } else {
-            const classInjectValue = Reflect.get(Bean, key);
-            Reflect.defineProperty(result, key, classInjectValue);
-        }
-    })
+    return result as unknown;
 }
